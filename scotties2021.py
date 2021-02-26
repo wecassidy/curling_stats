@@ -114,17 +114,23 @@ probabilities = tuple(
 )
 
 
-def makes_top_n(team_id, wins, n=3):
-    wins_with_ids = np.array(sorted(enumerate(wins), key=lambda w: w[1], reverse=True))
-    return team_id in wins_with_ids[0:n, 0]
-
-
 playoff_probabilities = np.zeros((len(teams),))
 for r, p in zip(records, probabilities):
     updated_wins = pool_wins + champions_round[:, 0] + win_list(r)
     for team in range(len(teams)):
-        if makes_top_n(team, updated_wins):
+        sorted_by_record = np.array(
+            sorted(enumerate(updated_wins), key=lambda w: w[1], reverse=True)
+        )
+        if team in sorted_by_record[0:2, 0]:
             playoff_probabilities[team] += p
+
+        elif sorted_by_record[2, 0] == team:
+            fourth_place = sorted_by_record[3][0]
+
+            if updated_wins[team] > updated_wins[fourth_place]:
+                playoff_probabilities[team] += p
+            else:  # tiebreaker
+                playoff_probabilities[team] += p * win_matrix[team, fourth_place]
 
 print("Team\t\tPool\tW-L\tP(playoffs)")
 for team, cr, p in sorted(
