@@ -1,0 +1,24 @@
+# ON     CA     SK     MB     QC    WC3    WC1     AB   ← beats ↓
+0.5,   0.444, 0.444, 0.476, 0.5,   0.333, 0.467, 0.333  # ON
+0.556, 0.5,   0.333, 0.615, 0.5,   0.333, 0.286, 0.333  # CA
+0.556, 0.667, 0.5,   0.615, 0.333, 0.5,   0.500, 0.5    # SK
+0.524, 0.385, 0.385, 0.5,   0.333, 0.5,   0.357, 0.5    # MB
+0.5,   0.5,   0.667, 0.667, 0.5,   0.5,   0.333, 0.5    # QC
+0.667, 0.667, 0.5,   0.5,   0.5,   0.5,   0.5,   0.333  # WC3
+0.533, 0.714, 0.500, 0.643, 0.667, 0.5,   0.5,   0.5    # WC1
+0.667, 0.667, 0.5,   0.5,   0.5,   0.667, 0.5,   0.5    # AB
+
+# Use historical skip-vs-skip win records in Curling Canada events,
+# where available [1], including round-robin play from this year
+# (where applicable). Apply Laplace's rule of succession to those
+# record to get win probability. For example, Jennifer Jones is 9-10
+# against Rachel Homan [2]. Add one win and one loss to the record to
+# estimate the probability of MB beating ON as 0.476.
+
+# Where Curling Canada data is not available, naively estimate the win
+# probability as 0.5 for both teams. Diagonal entries represent teams
+# playing themselves and so strictly speaking are nonsense, but should
+# be 0.5 to satisfy simplistic verification logic.
+
+# [1] https://stats.curling.io/
+# [2] Homan-Jones (ON-MB): 9-10 https://stats.curling.io/vs/homan-rachel#jones-jennifer
