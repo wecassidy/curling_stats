@@ -41,7 +41,9 @@ def count(iterable):
 
 
 # For convenience, the index of a team in this list is its unique
-# ID. Is this a good idea? Probably not, but this is easy.
+# ID. Is this a good idea? Probably not, but this is easy. Fun fact:
+# doing tiebreaking properly depends on this list being sorted by
+# seeding order.
 teams = [
     {"team": "ON (Homan)", "pool": "A", "pool_w": 7},
     {"team": "CA (Einarson)", "pool": "A", "pool_w": 7},
@@ -72,12 +74,29 @@ def win_list(record):
 
 
 # win_matrix[i, j] = probability that team i beats team j
-win_matrix = np.loadtxt("scotties_win_matrix_prior.csv", delimiter=",")
+source = "scotties_win_matrix_prior.csv"
+print(f"Using {source}")
+win_matrix = np.loadtxt(source, delimiter=",")
 validate_win_matrix(win_matrix)
 
-# Build lists of games, ways those games could go, and the probability of each sequence of wins and losses
+results = np.loadtxt("games_played.csv", delimiter=",", dtype=np.uint8)
+champions_round = np.zeros((len(teams), 2), dtype=np.uint8)  # wins, games played
+games_to_exclude = []
+for game in results:
+    # Update number of games played
+    champions_round[game[0], 1] += 1
+    champions_round[game[1], 1] += 1
+    # Update wins
+    champions_round[game[2], 0] += 1
+    games_to_exclude.append((game[0], game[1]))
+
+# Build lists of games, ways those games could go, and the probability
+# of each sequence of wins and losses
 games = tuple(
-    it.product(*partition(lambda i: teams[i]["pool"] == "B", range(len(teams))))
+    filter(
+        lambda g: g not in games_to_exclude,
+        it.product(*partition(lambda i: teams[i]["pool"] == "B", range(len(teams)))),
+    )
 )
 records = tuple(
     tuple(game[0] if a_wins else game[1] for game, a_wins in zip(games, record))
@@ -102,14 +121,16 @@ def makes_top_n(team_id, wins, n=3):
 
 playoff_probabilities = np.zeros((len(teams),))
 for r, p in zip(records, probabilities):
-    updated_wins = pool_wins + win_list(r)
+    updated_wins = pool_wins + champions_round[:, 0] + win_list(r)
     for team in range(len(teams)):
         if makes_top_n(team, updated_wins):
             playoff_probabilities[team] += p
 
-print("Team\t\tPool W-L\tP(playoffs)")
-for team, p in sorted(
-    zip(teams, playoff_probabilities), key=lambda x: x[1], reverse=True
+print("Team\t\tPool\tW-L\tP(playoffs)")
+for team, cr, p in sorted(
+    zip(teams, champions_round, playoff_probabilities), key=lambda x: x[2], reverse=True
 ):
-    wins = team["pool_w"]
-    print(f"{team['team']}\t     {wins}-{8 - wins}\t{p}")
+    wins = team["pool_w"] + cr[0]
+    losses = 8 + cr[1] - wins
+    pool = team["pool"]
+    print(f"{team['team']}\t{pool}\t{wins}-{losses}\t{p:.2%}")
